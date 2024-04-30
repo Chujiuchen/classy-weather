@@ -33,18 +33,16 @@ function formatDay(dateStr) {
 }
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      location: "guangzhou",
-      isLoading: false,
-      displayLocation: "",
-      weather: [],
-    };
-  }
+  state = {
+    location: "",
+    isLoading: false,
+    displayLocation: "",
+    weather: [],
+  };
 
   fetchWeather = async () => {
     try {
+      if (this.state.location.length < 2) return this.setState({ weather: [] });
       this.setState({ isLoading: true });
       // 1) Getting location (geocoding)
       const geoRes = await fetch(
@@ -68,11 +66,21 @@ class App extends React.Component {
       const weatherData = await weatherRes.json();
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      console.err(err);
+      console.error(err);
     } finally {
       this.setState({ isLoading: false });
     }
   };
+  componentDidMount() {
+    this.setState({ location: localStorage.getItem("location") || "" });
+  }
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.location !== this.state.location) {
+      this.fetchWeather();
+    }
+
+    localStorage.setItem("location", this.state.location);
+  }
 
   render() {
     return (
@@ -86,7 +94,7 @@ class App extends React.Component {
             onChange={(e) => this.setState({ location: e.target.value })}
           />
         </div>
-        <button onClick={this.fetchWeather}>Get weather</button>
+        {/* <button onClick={this.fetchWeather}>Get weather</button> */}
         <p>{this.state.isLoading && "Loading..."}</p>
 
         {this.state.weather.weathercode && (
@@ -102,6 +110,9 @@ class App extends React.Component {
 export default App;
 
 class Weather extends React.Component {
+  componentWillUnmount() {
+    console.log("Weather component unmounted");
+  }
   render() {
     const {
       temperature_2m_max: max,
